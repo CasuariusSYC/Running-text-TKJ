@@ -18,3 +18,16 @@ Note: Ini adalah konfigurasi standar dri panel P10 Ke esp32, pin nya sudah di ko
 berurusan langsung dengan library
 
 
+
+
+
+
+
+
+## Penjelasan Code 
+### WiFI
+### P10
+### EEPROMP
+### WebServer
+
+
