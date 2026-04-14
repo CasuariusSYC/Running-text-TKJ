@@ -91,9 +91,10 @@ runningText.c_str() : konversi String ke char*
 runningText.length() : panjang teks
 
 GRAPHICS_NORMAL : mode tampilan normal
+```
 
-EEPROM
-Digunakan untuk menyimpan teks secara permanen agar tidak hilang saat ESP32 dimatikan.
+## EEPROMP (Electrically Erasable Programmable Read-Only Memory)
 
-WebServer
-Digunakan untuk menyediakan antarmuka web bagi user agar bisa mengupdate teks running text.
+## WiFI (ESP32)
+
+## WebServer (ESP32)
