@@ -19,9 +19,9 @@ User dapat mengupdate teks running text melalui website dengan cara menghubungka
 
 Catatan: Konfigurasi di atas adalah standar dari panel P10 ke ESP32. Pin sudah dikonfigurasi melalui library, sehingga jika ingin memindahkan pin harus berurusan langsung dengan library.
 
-## Penjelasan Library yang digunakan 
+# Penjelasan Library yang digunakan 
 
-### WiFi Configuration
+
 
 ## EEPROMP (Electrically Erasable Programmable Read-Only Memory)
 
