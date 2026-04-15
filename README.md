@@ -28,3 +28,5 @@ Catatan: Konfigurasi di atas adalah standar dari panel P10 ke ESP32. Pin sudah d
 ## WiFI (ESP32)
 
 ## WebServer (ESP32)
+
+## DMD32
