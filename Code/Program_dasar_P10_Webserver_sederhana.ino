@@ -29,12 +29,11 @@ int    xPos        = DISPLAYS_ACROSS * 32;
 unsigned long lastScrollTime = 0;
 unsigned long lastWebTime    = 0;
 
-// Flag — semua diproses di loop(), TIDAK ada yang diproses di handler
 volatile bool pendingUpdate = false;
 String        pendingText   = "";
 
 // =====================================================================
-// TIMER — pause/resume untuk critical section
+// TIMER
 // =====================================================================
 void IRAM_ATTR triggerScan() {
   dmd.scanDisplayBySPI();
@@ -56,16 +55,19 @@ void initDMDTimer() {
 }
 
 // =====================================================================
-// WATCHDOG
+// WATCHDOG untuk versi 2.0.4 (di-nonaktifkan)
 // =====================================================================
 void disableWatchdog() {
+  // Nonaktifkan Task WDT
   esp_task_wdt_deinit();
-  disableCore0WDT();
-  disableCore1WDT();
+  
+  // Untuk versi 2.0.4, tidak ada disableCore0WDT/disableCore1WDT
+  // Jadi cukup deinit saja
+  Serial.println("Watchdog disabled (ESP32 Core 2.0.4 compatible)");
 }
 
 // =====================================================================
-// EEPROM — dipanggil HANYA dari loop(), bukan dari handler
+// EEPROM
 // =====================================================================
 String readTextFromEEPROM() {
   int len = EEPROM.read(0);
@@ -82,14 +84,13 @@ String readTextFromEEPROM() {
 }
 
 void writeTextToEEPROM(const String& text) {
-  // ★ Pause timer DMD dulu sebelum akses flash
   timerPause();
-  delayMicroseconds(3000); // tunggu scan cycle selesai (~2ms)
+  delayMicroseconds(3000);
 
   for (int i = 0; i < MAX_TEXT_LENGTH + 2; i++) EEPROM.write(i, 0);
   EEPROM.write(0, text.length());
   for (int i = 0; i < (int)text.length(); i++) EEPROM.write(i + 1, text[i]);
-  EEPROM.commit(); // ← ini yang konflik dengan SPI jika timer aktif
+  EEPROM.commit();
 
   timerResume();
 
@@ -124,7 +125,8 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
-  disableWatchdog();
+  disableWatchdog();  // ← Sekarang kompatibel dengan v2.0.4
+  
   EEPROM.begin(EEPROM_SIZE);
 
   WiFi.softAPConfig(local_IP, gateway, subnet);
@@ -150,38 +152,33 @@ void setup() {
 }
 
 // =====================================================================
-// LOOP — satu-satunya tempat update teks & EEPROM
+// LOOP
 // =====================================================================
 void loop() {
-  // ★ Proses pending update di sini, aman dari konflik
   if (pendingUpdate) {
     pendingUpdate = false;
 
     runningText = pendingText;
     xPos        = DISPLAYS_ACROSS * 32;
 
-    // Tulis EEPROM dengan timer di-pause
     writeTextToEEPROM(runningText);
 
-    // Update display
     dmd.clearScreen(true);
     dmd.selectFont(Arial_Black_16);
 
     Serial.println("Updated: " + runningText);
   }
 
-  // Web server
   if (millis() - lastWebTime >= 10) {
     lastWebTime = millis();
     server.handleClient();
   }
 
-  // Scroll
   scrollText();
 }
 
 // =====================================================================
-// WEB HANDLER — hanya simpan string, langsung send, TIDAK sentuh DMD/EEPROM
+// WEB HANDLER
 // =====================================================================
 void handleRoot() {
   String html = F("<!DOCTYPE html><html><head>"
@@ -215,10 +212,8 @@ void handleRoot() {
     "<div id='alert' class='alert'></div>"
     "</div>"
     "<script>"
-    // Inject teks saat ini via placeholder, diisi JS agar aman dari HTML injection
     "const cur=");
 
-  // Kirim JSON string untuk teks saat ini — aman dari XSS
   html += "\"" + runningText + "\"";
 
   html += F(";"
@@ -253,7 +248,6 @@ void handleRoot() {
 }
 
 void handleUpdateText() {
-  // ★ Langsung send dulu, BARU set flag
   if (!server.hasArg("text") || server.arg("text").length() == 0) {
     server.send(400, "text/plain", "Teks kosong");
     return;
@@ -263,10 +257,8 @@ void handleUpdateText() {
   if ((int)newText.length() > MAX_TEXT_LENGTH)
     newText = newText.substring(0, MAX_TEXT_LENGTH);
 
-  // ★ Send response DULU sebelum set flag
   server.send(200, "text/plain", "OK");
 
-  // Baru set flag, loop() akan prosesnya
   pendingText   = newText;
   pendingUpdate = true;
 }
