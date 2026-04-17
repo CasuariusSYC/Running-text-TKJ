@@ -1,102 +1,532 @@
-# Running Text P10 with ESP32 
-# NOTE: KODE INI HANYA AKAN BEKERJA DENGAN ESP32 VERSI 2.0.1 - 2.0.4 dikarenakan library DMD32 yang di gunakan tidak kompetible dengan versi lainnya
-Project ini saya buat sebagai materi pembelajaran di jurusan TKJ dan Teknik Elektronika pada SMKN 2 Manokwari
+# RUNNING TEXT P10 DENGAN ESP32
 
-## Deskripsi Alat
+**NOTE: KODE INI HANYA AKAN BEKERJA DENGAN ESP32 VERSI 2.0.1 - 2.0.4** dikarenakan library DMD32 yang digunakan tidak kompatibel dengan versi lainnya
 
-Project ini menggunakan:
-- Panel P10 sebagai display running text
-- ESP32 sebagai controller
-- Power Supply 5V 45A untuk menyalakan alat
-
-## Fitur
-
-User dapat mengupdate teks running text melalui website dengan cara menghubungkan ke WiFi ESP32 yang dikonfigurasi sebagai Access Point (AP).
-
-## Skematik
-
-![Skematik Koneksi Panel P10 ke ESP32](https://github.com/user-attachments/assets/d35f1841-e8db-4d7a-a492-f5e718bcd66c)
-
-Catatan: Konfigurasi di atas adalah standar dari panel P10 ke ESP32. Pin sudah dikonfigurasi melalui library, sehingga jika ingin memindahkan pin harus berurusan langsung dengan library.
-
-# Penjelasan Library yang digunakan 
-
-
-
-## EEPROMP (Electrically Erasable Programmable Read-Only Memory)
-Pada Arduino khususnya di ESP32, EEPROM digunakan untuk menyimpan data yang tetap tersimpan walaupun perangkat dimatikan (non-volatile). Namun penting dipahami, pada ESP32 EEPROM bukan memori fisik terpisah, melainkan emulasi di dalam flash memory. Karena itu, cara kerjanya sedikit berbeda dibanding EEPROM asli, terutama harus menggunakan proses commit agar data benar-benar tersimpan.
-
-## Fungsi dan Parameter EEPROM
-### EEPROM.begin(size)
-Fungsi ini digunakan untuk menginisialisasi EEPROM sebelum digunakan. Parameter size menentukan jumlah memori (dalam byte) yang ingin dialokasikan, misalnya 512 atau 1024. Fungsi ini wajib dipanggil di awal (biasanya di setup()), karena tanpa ini semua fungsi EEPROM tidak akan bekerja.
-
-### EEPROM.read(address)
-Fungsi ini digunakan untuk membaca 1 byte data dari EEPROM. Parameter address adalah alamat memori (dimulai dari 0). Nilai yang dikembalikan berupa angka 0–255 (tipe byte). Cocok untuk data sederhana seperti karakter atau nilai kecil.
-
-### EEPROM.write(address, value)
-Fungsi ini digunakan untuk menulis 1 byte data ke EEPROM. Parameter address adalah lokasi penyimpanan, dan value adalah data yang ingin disimpan (0–255). Fungsi ini hanya menulis ke buffer, belum menyimpan permanen.
-
-### EEPROM.get(address, variable)
-Fungsi ini digunakan untuk membaca data dengan tipe lebih kompleks (misalnya int, float, atau struct). Parameter address adalah lokasi awal data, dan variable adalah variabel tujuan. Fungsi ini akan langsung mengisi variabel tersebut sesuai tipe datanya.
-
-### EEPROM.put(address, data)
-Fungsi ini digunakan untuk menyimpan data kompleks ke EEPROM. Parameter address adalah lokasi awal, dan data adalah variabel yang ingin disimpan. Kelebihannya dibanding write adalah lebih efisien karena hanya menulis jika data berubah.
-
-### EEPROM.commit()
-Fungsi ini digunakan untuk menyimpan semua perubahan ke flash memory secara permanen. Tidak memiliki parameter. Ini adalah fungsi paling penting di ESP32—tanpa ini, data yang ditulis tidak akan benar-benar tersimpan.
-
-### EEPROM.end()
-Fungsi ini digunakan untuk mengakhiri penggunaan EEPROM dan membebaskan resource. Tidak memiliki parameter. Biasanya digunakan pada sistem yang lebih kompleks, tapi sering tidak wajib di project sederhana.
-
-### EEPROM.length()
-Fungsi ini digunakan untuk mengetahui ukuran EEPROM yang telah dialokasikan. Tidak memiliki parameter dan mengembalikan jumlah byte sesuai dengan nilai saat begin() dipanggil.
-
-
-
-# WiFi Library untuk ESP32 (Arduino Framework)
-**Source:
-**Library bawaan:** #include <WiFi.h>  
-**Platform:** ESP32 (ESP-WROOM-32, ESP32-S2, ESP32-S3, ESP32-C3, dll.)  
-**Dasar:** Mengacu pada standar API WiFi dari ESP-IDF 
+Project ini saya buat sebagai materi pembelajaran di jurusan TKJ dan Teknik Elektronika pada SMKN 2 Manokwari.
 
 ---
 
-## Deskripsi Umum
+## DESKRIPSI ALAT
 
-Library `WiFi.h` untuk ESP32 pada Arduino Framework adalah implementasi dari **ESP-IDF WiFi driver** yang telah dibungkus agar kompatibel dengan sintaks Arduino . Library ini menyediakan fungsi lengkap untuk menghubungkan ESP32 ke jaringan WiFi, baik sebagai **Station (client)** maupun **Access Point (server)**.
+Project ini menggunakan:
+- **Panel P10** sebagai display running text
+- **ESP32** sebagai controller
+- **Power Supply 5V 45A** untuk menyalakan alat
 
-## Mode Operasi yang Didukung
+---
 
-ESP32 mendukung beberapa mode operasi WiFi yang dapat diatur sesuai kebutuhan:
+## FITUR
 
-- **Station Mode (STA)** – ESP32 bertindak sebagai client yang terhubung ke jaringan WiFi (router) 
-- **Soft-AP Mode (AP)** – ESP32 bertindak sebagai access point, perangkat lain dapat terhubung langsung 
-- **AP-STA Coexistence Mode** – ESP32 bertindak sebagai client sekaligus access point secara bersamaan 
+User dapat mengupdate teks running text melalui website dengan cara menghubungkan ke WiFi ESP32 yang dikonfigurasi sebagai **Access Point (AP)**.
 
-## Keamanan yang Didukung
+---
+
+## SKEMATIK
+
+![Skematik Koneksi Panel P10 ke ESP32](https://github.com/user-attachments/assets/d35f1841-e8db-4d7a-a492-f5e718bcd66c)
+
+**Catatan:** Konfigurasi di atas adalah standar dari panel P10 ke ESP32. Pin sudah dikonfigurasi melalui library, sehingga jika ingin memindahkan pin harus berurusan langsung dengan library.
+
+---
+
+## KONEKSI PIN PANEL P10 KE ESP32
+
+Berikut adalah koneksi standar yang digunakan oleh library DMD32 pada ESP32 :
+
+| Panel P10 | Pin ESP32 | Keterangan |
+|-----------|-----------|------------|
+| CLK       | GPIO 18   | SPI Clock (SCK) |
+| DATA (R)  | GPIO 23   | SPI MOSI (Master Out) |
+| OE (nOE)  | GPIO 22   | Output Enable (aktif low) |
+| A (RS)    | GPIO 19   | Row select bit 0 |
+| B         | GPIO 21   | Row select bit 1 |
+| SCLK (LAT)| GPIO 2    | Latch / Strobe |
+| GND       | GND       | Ground |
+| VCC       | 5V        | Power (dari power supply eksternal) |
+
+**Catatan Penting:** Panel P10 membutuhkan daya yang besar (hingga 2-4A per panel). Jangan menyuplai daya dari pin 5V ESP32, gunakan power supply eksternal 5V 45A seperti yang disebutkan di atas .
+
+---
+
+## PENGATURAN ESP32 UNTUK DMD32
+
+### Pemilihan Board
+
+Karena library DMD32 hanya kompatibel dengan ESP32 versi 2.0.1 - 2.0.4, maka perlu mengatur versi board yang sesuai di Arduino IDE:
+
+1. Buka **File > Preferences**
+2. Tambahkan URL berikut di **Additional Boards Manager URLs**:
+   ```
+   https://dl.espressif.com/dl/package_esp32_index.json
+   ```
+3. Buka **Tools > Board > Boards Manager**
+4. Cari "ESP32" dan install versi **2.0.4**
+5. Pilih board **ESP32 Dev Module**
+
+---
+
+# PENJELASAN LIBRARY YANG DIGUNAKAN
+
+## DMD32 (Dot Matrix Display Library untuk ESP32)
+
+**Library bawaan:** `#include <DMD32.h>`  
+**Penulis:** Khudhur Abdullah Alfarhan  
+**Platform:** ESP32  
+**Repository:** [Qudor-Engineer/DMD32](https://github.com/Qudor-Engineer/DMD32)
+
+### Deskripsi Umum
+
+Library DMD32 adalah library untuk ESP32 yang digunakan mengendalikan **DMD (Dot Matrix Display)** seperti panel LED P10. Library ini memanfaatkan **SPI (Serial Peripheral Interface)** untuk mengirim data ke panel dengan cepat dan efisien .
+
+Panel P10 adalah **modul LED dot matrix 32x16 piksel** (32 kolom x 16 baris) yang biasanya digunakan untuk running text, papan skor, atau display informasi publik. Jika menggunakan lebih dari satu panel, dapat disusun secara horizontal (across) maupun vertikal (down).
+
+### Karakteristik Panel P10
+
+| Karakteristik | Nilai |
+|---------------|-------|
+| Resolusi per panel | 32 x 16 piksel |
+| Jenis | Monokrom (merah) atau RGB |
+| Scan mode | 1/4 scan |
+| Interface | HUB12 / HUB75 |
+| Tegangan | 5V DC |
+| Daya maksimal | ~2-4A per panel |
+
+---
+
+## Fungsi dan Parameter DMD32
+
+### Inisialisasi DMD
+
+```cpp
+#include <DMD32.h>
+#include "fonts/SystemFont5x7.h"
+#include "fonts/Arial_Black_16_ISO_8859_1.h"
+
+#define DISPLAYS_ACROSS 1  // Jumlah panel horizontal
+#define DISPLAYS_DOWN 1    // Jumlah panel vertikal
+DMD dmd(DISPLAYS_ACROSS, DISPLAYS_DOWN);
+```
+
+### Timer untuk Scanning (Wajib untuk ESP32)
+
+Library DMD32 membutuhkan **hardware timer** untuk melakukan refresh display secara periodik. Timer ini harus dikonfigurasi dengan benar agar panel dapat menampilkan gambar .
+
+**Syntax:**
+```cpp
+hw_timer_t * timer = NULL;
+
+void IRAM_ATTR triggerScan() {
+  dmd.scanDisplayBySPI();
+}
+
+void setup() {
+  uint8_t cpuClock = ESP.getCpuFreqMHz();
+  timer = timerBegin(0, cpuClock, true);
+  timerAttachInterrupt(timer, &triggerScan, true);
+  timerAlarmWrite(timer, 300, true);  // Interval 300 mikrodetik
+  timerAlarmEnable(timer);
+}
+```
+
+**Parameter timerAlarmWrite:**
+- `300` – Interval dalam mikrodetik (semakin kecil, semakin cepat refresh)
+- Nilai yang umum digunakan: 200-500 mikrodetik
+
+### dmd.clearScreen()
+
+**Deskripsi:** Membersihkan layar (menonaktifkan semua LED).
+
+**Syntax:**
+```cpp
+dmd.clearScreen(clearType);
+```
+
+**Parameter:**
+- `true` – Mematikan semua LED (normal)
+- `false` – Menyalakan semua LED (negative)
+
+### dmd.selectFont()
+
+**Deskripsi:** Memilih font yang akan digunakan untuk menampilkan teks.
+
+**Syntax:**
+```cpp
+dmd.selectFont(&fontName);
+```
+
+**Font bawaan yang tersedia:**
+- `SystemFont5x7` – Font dasar ukuran 5x7 piksel
+- `Arial_Black_16_ISO_8859_1` – Font Arial ukuran 16
+
+### dmd.drawString()
+
+**Deskripsi:** Menampilkan string teks statis pada posisi tertentu.
+
+**Syntax:**
+```cpp
+dmd.drawString(x, y, teks, panjang, graphicsMode);
+```
+
+**Parameter:**
+- `x` – Posisi horizontal (0-31 per panel)
+- `y` – Posisi vertikal (0-15 per panel)
+- `teks` – String yang akan ditampilkan
+- `panjang` – Panjang string (dalam karakter)
+- `graphicsMode` – Mode grafis (`GRAPHICS_NORMAL`)
+
+**Contoh:**
+```cpp
+dmd.selectFont(SystemFont5x7);
+dmd.drawString(0, 0, "Hello World", 11, GRAPHICS_NORMAL);
+```
+
+### dmd.drawMarquee()
+
+**Deskripsi:** Menampilkan teks berjalan (running text / marquee).
+
+**Syntax:**
+```cpp
+dmd.drawMarquee(teks, panjang, lebar, posisiAwal);
+```
+
+**Parameter:**
+- `teks` – String yang akan ditampilkan
+- `panjang` – Panjang string
+- `lebar` – Lebar area marquee (biasanya `32 * DISPLAYS_ACROSS`)
+- `posisiAwal` – Posisi awal teks
+
+### dmd.stepMarquee()
+
+**Deskripsi:** Menggerakkan teks marquee satu langkah (dipanggil dalam loop).
+
+**Syntax:**
+```cpp
+dmd.stepMarquee(arah, posisiY);
+```
+
+**Parameter:**
+- `arah` – `-1` untuk bergerak ke kiri, `1` untuk ke kanan
+- `posisiY` – Posisi vertikal teks
+
+### dmd.drawPixel()
+
+**Deskripsi:** Menyalakan atau mematikan satu piksel pada koordinat tertentu.
+
+**Syntax:**
+```cpp
+dmd.writePixel(x, y, graphicsMode, nilai);
+```
+
+**Parameter:**
+- `x` – Koordinat X (0-31 per panel)
+- `y` – Koordinat Y (0-15 per panel)
+- `graphicsMode` – `GRAPHICS_NORMAL`
+- `nilai` – `1` untuk menyalakan, `0` untuk mematikan
+
+---
+
+## Contoh Program DMD32
+
+### Contoh 1: Running Text Dasar
+
+Program ini menampilkan teks berjalan dari kanan ke kiri .
+
+```cpp
+#include <DMD32.h>
+#include "fonts/SystemFont5x7.h"
+#include "fonts/Arial_Black_16_ISO_8859_1.h"
+
+#define DISPLAYS_ACROSS 1
+#define DISPLAYS_DOWN 1
+
+DMD dmd(DISPLAYS_ACROSS, DISPLAYS_DOWN);
+
+hw_timer_t * timer = NULL;
+
+void IRAM_ATTR triggerScan() {
+  dmd.scanDisplayBySPI();
+}
+
+void setup() {
+  uint8_t cpuClock = ESP.getCpuFreqMHz();
+  timer = timerBegin(0, cpuClock, true);
+  timerAttachInterrupt(timer, &triggerScan, true);
+  timerAlarmWrite(timer, 300, true);
+  timerAlarmEnable(timer);
+
+  dmd.clearScreen(true);
+  Serial.begin(115200);
+}
+
+void loop() {
+  dmd.clearScreen(true);
+  dmd.selectFont(Arial_Black_16_ISO_8859_1);
+  
+  const char msg[] = "SMKN 2 MANOKWARI - TEKNIK ELEKTRONIKA & TKJ ";
+  dmd.drawMarquee(msg, strlen(msg), (32 * DISPLAYS_ACROSS) - 1, 0);
+  
+  long start = millis();
+  long timerMarquee = start;
+  
+  while (true) {
+    if ((timerMarquee + 30) < millis()) {
+      dmd.stepMarquee(-1, 0);
+      timerMarquee = millis();
+    }
+  }
+}
+```
+
+### Contoh 2: Menampilkan Variabel (Suhu, Kelembaban, Skor)
+
+Untuk menampilkan nilai variabel seperti suhu atau skor, gunakan fungsi `sprintf()` untuk menggabungkan string dengan angka .
+
+```cpp
+#include <DMD32.h>
+#include "fonts/SystemFont5x7.h"
+
+#define DISPLAYS_ACROSS 1
+#define DISPLAYS_DOWN 1
+
+DMD dmd(DISPLAYS_ACROSS, DISPLAYS_DOWN);
+
+hw_timer_t * timer = NULL;
+
+void IRAM_ATTR triggerScan() {
+  dmd.scanDisplayBySPI();
+}
+
+int suhu = 28;
+int kelembaban = 65;
+
+void setup() {
+  uint8_t cpuClock = ESP.getCpuFreqMHz();
+  timer = timerBegin(0, cpuClock, true);
+  timerAttachInterrupt(timer, &triggerScan, true);
+  timerAlarmWrite(timer, 300, true);
+  timerAlarmEnable(timer);
+
+  dmd.clearScreen(true);
+  dmd.selectFont(SystemFont5x7);
+  Serial.begin(115200);
+}
+
+void loop() {
+  dmd.clearScreen(true);
+  
+  // Menampilkan suhu
+  char suhuMsg[10];
+  sprintf(suhuMsg, "%d C", suhu);
+  dmd.drawString(0, 0, suhuMsg, strlen(suhuMsg), GRAPHICS_NORMAL);
+  
+  // Menampilkan kelembaban
+  char humMsg[10];
+  sprintf(humMsg, "%d %%", kelembaban);
+  dmd.drawString(0, 9, humMsg, strlen(humMsg), GRAPHICS_NORMAL);
+  
+  delay(2000);
+}
+```
+
+### Contoh 3: Multiple Panel (2x1 - Dua Panel Horizontal)
+
+```cpp
+#include <DMD32.h>
+#include "fonts/Arial_Black_16_ISO_8859_1.h"
+
+#define DISPLAYS_ACROSS 2  // Dua panel horizontal
+#define DISPLAYS_DOWN 1    // Satu panel vertikal
+
+DMD dmd(DISPLAYS_ACROSS, DISPLAYS_DOWN);
+
+hw_timer_t * timer = NULL;
+
+void IRAM_ATTR triggerScan() {
+  dmd.scanDisplayBySPI();
+}
+
+void setup() {
+  uint8_t cpuClock = ESP.getCpuFreqMHz();
+  timer = timerBegin(0, cpuClock, true);
+  timerAttachInterrupt(timer, &triggerScan, true);
+  timerAlarmWrite(timer, 300, true);
+  timerAlarmEnable(timer);
+
+  dmd.clearScreen(true);
+  
+  // Total lebar = 32 x 2 = 64 piksel
+  char msg[] = "WELCOME TO SMKN 2 MANOKWARI ";
+  dmd.selectFont(Arial_Black_16_ISO_8859_1);
+  dmd.drawMarquee(msg, strlen(msg), (32 * DISPLAYS_ACROSS) - 1, 0);
+}
+
+void loop() {
+  static long timerMarquee = 0;
+  if (millis() - timerMarquee >= 30) {
+    dmd.stepMarquee(-1, 0);
+    timerMarquee = millis();
+  }
+}
+```
+
+---
+
+## EEPROM (Electrically Erasable Programmable Read-Only Memory)
+
+**Library bawaan:** `#include <EEPROM.h>`
+
+### Deskripsi Umum
+
+EEPROM adalah jenis memori yang dapat ditulis dan dihapus secara elektrik, serta bersifat **non-volatile** (data tidak hilang saat daya dimatikan).
+
+Pada ESP32, library EEPROM sebenarnya adalah **emulasi di dalam flash memory**, bukan memori EEPROM fisik yang terpisah. Hal ini penting karena mempengaruhi cara kerja dan daya tahan memori.
+
+### Karakteristik Penting
+
+| Karakteristik | Nilai |
+|---------------|-------|
+| Ukuran default ESP32 | 512 byte |
+| Ukuran Arduino Uno | 1024 byte |
+| Daya tahan tulis | ~100.000 - 1.000.000 siklus |
+| Jenis data | 1 byte per alamat (0-255) |
+
+**Peringatan:** Flash memory memiliki batasan jumlah siklus tulis. Setiap kali melakukan `EEPROM.commit()`, seluruh blok memori ditulis ulang, bukan hanya byte yang diubah.
+
+---
+
+## Fungsi dan Parameter EEPROM
+
+### EEPROM.begin()
+
+**Deskripsi:** Menginisialisasi EEPROM dengan ukuran tertentu. Fungsi ini **wajib** dipanggil sebelum operasi EEPROM lainnya.
+
+**Parameter:** `size` – Jumlah byte yang akan dialokasikan (misalnya 512 atau 1024)
+
+**Contoh:**
+```cpp
+#include <EEPROM.h>
+#define EEPROM_SIZE 512
+
+void setup() {
+  EEPROM.begin(EEPROM_SIZE);
+}
+```
+
+### EEPROM.read()
+
+**Deskripsi:** Membaca 1 byte data dari alamat yang ditentukan.
+
+**Parameter:** `address` – Alamat memori (dimulai dari 0)
+
+**Returns:** `byte` – Nilai 0-255
+
+**Contoh:**
+```cpp
+byte value = EEPROM.read(0);
+```
+
+### EEPROM.write()
+
+**Deskripsi:** Menulis 1 byte data ke buffer EEPROM. **Data belum tersimpan permanen** sampai `commit()` dipanggil.
+
+**Parameter:**
+- `address` – Alamat tujuan
+- `value` – Nilai yang akan ditulis (0-255)
+
+**Contoh:**
+```cpp
+EEPROM.write(0, 255);
+EEPROM.commit(); // JANGAN LUPA commit!
+```
+
+### EEPROM.get()
+
+**Deskripsi:** Membaca data dengan tipe kompleks (int, float, atau struct) dari EEPROM.
+
+**Parameter:**
+- `address` – Alamat awal data
+- `variable` – Variabel tujuan
+
+**Contoh:**
+```cpp
+struct Config {
+  float suhu;
+  int kelembaban;
+};
+Config myConfig;
+EEPROM.get(0, myConfig);
+```
+
+### EEPROM.put()
+
+**Deskripsi:** Menyimpan data kompleks ke EEPROM. Lebih efisien dibanding `write()` karena hanya menulis jika data berubah.
+
+**Parameter:**
+- `address` – Alamat awal penyimpanan
+- `data` – Data yang akan disimpan
+
+**Contoh:**
+```cpp
+EEPROM.put(0, myConfig);
+EEPROM.commit();
+```
+
+### EEPROM.commit()
+
+**Deskripsi:** Menyimpan semua perubahan dari buffer ke flash memory secara permanen. **Ini adalah fungsi paling penting di ESP32**—tanpa ini, data yang ditulis tidak akan benar-benar tersimpan.
+
+**Returns:** `bool` – `true` jika berhasil disimpan
+
+### EEPROM.end()
+
+**Deskripsi:** Mengakhiri penggunaan EEPROM dan membebaskan resource. Juga akan melakukan commit otomatis.
+
+### EEPROM.length()
+
+**Deskripsi:** Mengetahui ukuran EEPROM yang telah dialokasikan.
+
+**Returns:** `int` – Jumlah byte yang tersedia
+
+---
+
+## WiFi Library untuk ESP32 (Arduino Framework)
+
+**Library bawaan:** `#include <WiFi.h>`
+
+### Deskripsi Umum
+
+Library `WiFi.h` untuk ESP32 adalah implementasi dari **ESP-IDF WiFi driver** yang telah dibungkus agar kompatibel dengan sintaks Arduino. Library ini menyediakan fungsi lengkap untuk menghubungkan ESP32 ke jaringan WiFi, baik sebagai **Station (client)** maupun **Access Point (server)**.
+
+### Mode Operasi yang Didukung
+
+- **Station Mode (STA)** – ESP32 bertindak sebagai client yang terhubung ke jaringan WiFi (router)
+- **Soft-AP Mode (AP)** – ESP32 bertindak sebagai access point, perangkat lain dapat terhubung langsung
+- **AP-STA Coexistence Mode** – ESP32 bertindak sebagai client sekaligus access point secara bersamaan
+
+### Keamanan yang Didukung
 
 - WPA/WPA2 Personal (PSK)
 - WPA3 (pada chip yang mendukung)
 - WEP
 - Open network (tanpa sandi)
-- WPA2 Enterprise (pada beberapa varian chip) 
+- WPA2 Enterprise (pada beberapa varian chip)
 
-## Perbedaan dengan Library WiFi Shield Arduino
+### Perbedaan dengan Library WiFi Shield Arduino
 
 | Aspek | WiFi Shield Arduino | ESP32 Built-in WiFi |
 |-------|---------------------|---------------------|
-| **Library** | `#include <WiFi.h>` (untuk shield) | `#include <WiFi.h>` (untuk ESP32) |
-| **Fitur** | Terbatas | Lengkap (AP+STA, scanning, promiscuous) |
-| **Kecepatan** | 2.4 GHz, kecepatan terbatas | 2.4 GHz, throughput hingga 30 Mbps  |
-| **Mode** | Station + AP terpisah | Station, AP, atau keduanya simultan  |
+| Library | `#include <WiFi.h>` (untuk shield) | `#include <WiFi.h>` (untuk ESP32) |
+| Fitur | Terbatas | Lengkap (AP+STA, scanning, promiscuous) |
+| Kecepatan | 2.4 GHz, kecepatan terbatas | 2.4 GHz, throughput hingga 30 Mbps |
+| Mode | Station + AP terpisah | Station, AP, atau keduanya simultan |
 
-**Catatan penting:** Meskipun menggunakan `#include <WiFi.h>` yang sama, library untuk ESP32 memiliki **fungsi tambahan** yang tidak tersedia pada library WiFi Shield . Pastikan Anda menggunakan board ESP32 saat mengkompilasi kode.
+**Catatan penting:** Meskipun menggunakan `#include <WiFi.h>` yang sama, library untuk ESP32 memiliki **fungsi tambahan** yang tidak tersedia pada library WiFi Shield. Pastikan Anda menggunakan board ESP32 saat mengkompilasi kode.
 
 ---
 
 ## Fungsi Dasar WiFi (Station Mode)
 
-### 1. WiFi.begin()
+### WiFi.begin()
 
 **Deskripsi:** Menghubungkan ESP32 ke jaringan WiFi sebagai Station.
 
@@ -106,10 +536,8 @@ WiFi.begin(ssid, password);
 ```
 
 **Parameter:**
-- `ssid` – Nama jaringan WiFi (const char*)
-- `password` – Sandi jaringan (const char*, kosongkan untuk jaringan terbuka)
-
-**Returns:** `WL_CONNECTED` atau status koneksi (sebenarnya prosesnya async)
+- `ssid` – Nama jaringan WiFi
+- `password` – Sandi jaringan (kosongkan untuk jaringan terbuka)
 
 **Contoh:**
 ```cpp
@@ -130,226 +558,105 @@ void setup() {
   Serial.println("Terhubung!");
   Serial.println(WiFi.localIP());
 }
-
-void loop() {}
 ```
 
-### 2. WiFi.status()
+### WiFi.status()
 
 **Deskripsi:** Mengembalikan status koneksi WiFi saat ini.
 
-**Syntax:**
-```cpp
-WiFi.status();
-```
-
-**Returns:** Nilai enum status:
+**Returns:** 
 - `WL_CONNECTED` – Terhubung ke AP
 - `WL_NO_SSID_AVAIL` – SSID tidak ditemukan
 - `WL_CONNECT_FAILED` – Gagal terhubung
 - `WL_DISCONNECTED` – Terputus
 - `WL_IDLE_STATUS` – Sedang proses
 
-**Contoh:**
-```cpp
-if (WiFi.status() == WL_CONNECTED) {
-  Serial.println("Terhubung ke WiFi");
-} else {
-  Serial.println("Tidak terhubung");
-}
-```
-
-### 3. WiFi.disconnect()
+### WiFi.disconnect()
 
 **Deskripsi:** Memutuskan koneksi WiFi dari AP yang sedang terhubung.
 
-**Syntax:**
-```cpp
-WiFi.disconnect();
-```
-
-**Parameter:** Tidak ada
-
 **Returns:** `true` jika berhasil, `false` jika gagal
 
-### 4. WiFi.reconnect()
+### WiFi.reconnect()
 
 **Deskripsi:** Memaksa ESP32 untuk menyambung ulang ke AP terakhir yang dikonfigurasi.
 
-**Syntax:**
-```cpp
-WiFi.reconnect();
-```
-
-### 5. WiFi.localIP()
+### WiFi.localIP()
 
 **Deskripsi:** Mendapatkan alamat IP yang diberikan oleh DHCP (atau statis) pada ESP32.
 
-**Syntax:**
-```cpp
-WiFi.localIP();
-```
-
 **Returns:** Objek `IPAddress`
 
-**Contoh:**
-```cpp
-Serial.print("IP Address: ");
-Serial.println(WiFi.localIP());
-```
-
-### 6. WiFi.macAddress()
+### WiFi.macAddress()
 
 **Deskripsi:** Mendapatkan alamat MAC dari interface WiFi ESP32.
 
-**Syntax:**
-```cpp
-WiFi.macAddress();
-WiFi.macAddress(mac_buffer);
-```
+**Returns:** `String`
 
-**Parameter (opsional):** `mac_buffer` – array byte berukuran 6 untuk menyimpan MAC
-
-**Returns:** `String` jika tanpa parameter, atau `void` jika dengan buffer
-
-**Contoh:**
-```cpp
-Serial.print("MAC Address: ");
-Serial.println(WiFi.macAddress());
-```
-
-### 7. WiFi.RSSI()
+### WiFi.RSSI()
 
 **Deskripsi:** Mendapatkan kekuatan sinyal (Received Signal Strength Indicator) dari AP yang terhubung.
 
-**Syntax:**
-```cpp
-WiFi.RSSI();
-```
-
 **Returns:** `long` – nilai RSSI dalam dBm (semakin mendekati 0, semakin bagus)
 
-**Contoh:**
-```cpp
-long rssi = WiFi.RSSI();
-Serial.print("Signal strength: ");
-Serial.print(rssi);
-Serial.println(" dBm");
-```
-
-### 8. WiFi.SSID()
+### WiFi.SSID()
 
 **Deskripsi:** Mendapatkan nama SSID dari AP yang sedang terhubung.
 
-**Syntax:**
-```cpp
-WiFi.SSID();
-```
+**Returns:** `String`
 
-**Returns:** `String` – nama SSID
-
-### 9. WiFi.BSSID()
+### WiFi.BSSID()
 
 **Deskripsi:** Mendapatkan alamat MAC (BSSID) dari AP yang terhubung.
-
-**Syntax:**
-```cpp
-WiFi.BSSID(bssid);
-```
-
-**Parameter:** `bssid` – array byte berukuran 6
-
-**Returns:** `void` (hasil disimpan ke parameter)
 
 ---
 
 ## Fungsi Station Mode Lanjutan
 
-### 10. WiFi.config()
+### WiFi.config()
 
-**Deskripsi:** Mengatur alamat IP statis (non-DHCP).
+**Deskripsi:** Mengatur alamat IP statis (non-DHCP). Harus dipanggil **sebelum** `WiFi.begin()`
 
 **Syntax:**
 ```cpp
 WiFi.config(local_ip, gateway, subnet, dns1, dns2);
 ```
 
-**Parameter:**
-- `local_ip` – IP statis untuk ESP32
-- `gateway` – IP gateway jaringan
-- `subnet` – Subnet mask
-- `dns1` – DNS server utama (opsional)
-- `dns2` – DNS server sekunder (opsional)
-
-**Catatan:** Harus dipanggil **sebelum** `WiFi.begin()` 
-
 **Contoh:**
 ```cpp
 IPAddress local_IP(192, 168, 1, 100);
 IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
-IPAddress primaryDNS(8, 8, 8, 8);
 
-WiFi.config(local_IP, gateway, subnet, primaryDNS);
+WiFi.config(local_IP, gateway, subnet);
 WiFi.begin(ssid, password);
 ```
 
-### 11. WiFi.setAutoConnect()
+### WiFi.setAutoConnect()
 
 **Deskripsi:** Mengatur apakah ESP32 akan otomatis menyambung ke AP yang dikenal saat startup.
 
-**Syntax:**
-```cpp
-WiFi.setAutoConnect(true);  // default
-WiFi.setAutoConnect(false);
-```
-
-### 12. WiFi.setAutoReconnect()
+### WiFi.setAutoReconnect()
 
 **Deskripsi:** Mengatur apakah ESP32 akan otomatis menyambung ulang jika koneksi terputus.
 
-**Syntax:**
-```cpp
-WiFi.setAutoReconnect(true);
-WiFi.setAutoReconnect(false);
-```
+### Event Handler (onEvent)
 
-### 13. WiFi.persistent()
-
-**Deskripsi:** Mengatur apakah konfigurasi WiFi disimpan ke flash memory (NVS) secara permanen.
-
-**Syntax:**
-```cpp
-WiFi.persistent(true);   // simpan ke flash
-WiFi.persistent(false);  // hanya di RAM
-```
-
-### 14. Event Handler (onEvent)
-
-**Deskripsi:** Mendaftarkan fungsi callback untuk menangani event WiFi .
-
-**Syntax:**
-```cpp
-WiFi.onEvent(callback_function, event_type);
-```
+**Deskripsi:** Mendaftarkan fungsi callback untuk menangani event WiFi.
 
 **Event yang tersedia:**
 - `ARDUINO_EVENT_WIFI_STA_CONNECTED` – Terhubung ke AP
 - `ARDUINO_EVENT_WIFI_STA_DISCONNECTED` – Terputus dari AP
 - `ARDUINO_EVENT_WIFI_STA_GOT_IP` – Berhasil mendapat IP
-- `ARDUINO_EVENT_WIFI_STA_LOST_IP` – Kehilangan IP
 
 **Contoh:**
 ```cpp
-#include <WiFi.h>
-
 void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
   Serial.println("WiFi Connected!");
   Serial.println(WiFi.localIP());
 }
 
 void setup() {
-  Serial.begin(115200);
   WiFi.onEvent(WiFiGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
   WiFi.begin(ssid, password);
 }
@@ -359,54 +666,39 @@ void setup() {
 
 ## Fungsi Scan Jaringan
 
-### 15. WiFi.scanNetworks()
+### WiFi.scanNetworks()
 
-**Deskripsi:** Memindai semua jaringan WiFi yang tersedia di sekitar .
+**Deskripsi:** Memindai semua jaringan WiFi yang tersedia di sekitar.
 
 **Syntax:**
 ```cpp
 WiFi.scanNetworks();
-WiFi.scanNetworks(async);
+WiFi.scanNetworks(async); // async = true untuk non-blocking
 ```
 
-**Parameter:**
-- `async` – `true` untuk scan asynchronous (tidak blocking), `false` untuk blocking
-
-**Returns:** `int16_t` – jumlah jaringan yang ditemukan, atau negatif jika error
+**Returns:** `int16_t` – jumlah jaringan yang ditemukan
 
 **Contoh:**
 ```cpp
 int jumlahJaringan = WiFi.scanNetworks();
-Serial.print("Ditemukan ");
-Serial.print(jumlahJaringan);
-Serial.println(" jaringan");
-
 for (int i = 0; i < jumlahJaringan; i++) {
-  Serial.print(i + 1);
-  Serial.print(": ");
   Serial.print(WiFi.SSID(i));
   Serial.print(" (");
   Serial.print(WiFi.RSSI(i));
   Serial.println(" dBm)");
 }
-
-WiFi.scanDelete(); // membersihkan hasil scan dari memori
-```
-
-### 16. WiFi.scanDelete()
-
-**Deskripsi:** Menghapus hasil scan dari memori untuk menghemat RAM.
-
-**Syntax:**
-```cpp
 WiFi.scanDelete();
 ```
+
+### WiFi.scanDelete()
+
+**Deskripsi:** Menghapus hasil scan dari memori untuk menghemat RAM.
 
 ---
 
 ## Fungsi Access Point (Soft-AP Mode)
 
-### 17. WiFi.softAP()
+### WiFi.softAP()
 
 **Deskripsi:** Mengaktifkan ESP32 sebagai Access Point.
 
@@ -419,61 +711,33 @@ WiFi.softAP(ssid, password, channel, ssid_hidden, max_connection);
 
 **Parameter:**
 - `ssid` – Nama jaringan yang akan dipancarkan
-- `password` – Sandi (minimal 8 karakter untuk WPA2, kosongkan untuk open)
+- `password` – Sandi (minimal 8 karakter untuk WPA2)
 - `channel` – Kanal WiFi (1-13, default 1)
-- `ssid_hidden` – `true` untuk menyembunyikan SSID, `false` untuk publik
-- `max_connection` – Maksimal client terhubung (1-8, default 4)
-
-**Returns:** `true` jika berhasil, `false` jika gagal
+- `ssid_hidden` – `true` untuk menyembunyikan SSID
+- `max_connection` – Maksimal client (1-8, default 4)
 
 **Contoh:**
 ```cpp
 WiFi.softAP("ESP32_Network", "12345678");
-Serial.println("Access Point aktif!");
 Serial.print("IP AP: ");
 Serial.println(WiFi.softAPIP());
 ```
 
-### 18. WiFi.softAPIP()
+### WiFi.softAPIP()
 
 **Deskripsi:** Mendapatkan alamat IP dari interface Access Point (default 192.168.4.1).
 
-**Syntax:**
-```cpp
-WiFi.softAPIP();
-```
-
-**Returns:** Objek `IPAddress`
-
-### 19. WiFi.softAPmacAddress()
+### WiFi.softAPmacAddress()
 
 **Deskripsi:** Mendapatkan alamat MAC dari interface Access Point.
 
-**Syntax:**
-```cpp
-WiFi.softAPmacAddress();
-```
-
-**Returns:** `String`
-
-### 20. WiFi.softAPdisconnect()
+### WiFi.softAPdisconnect()
 
 **Deskripsi:** Menonaktifkan mode Access Point.
-
-**Syntax:**
-```cpp
-WiFi.softAPdisconnect(wifioff);
-```
-
-**Parameter:** `wifioff` – `true` untuk mematikan radio WiFi sepenuhnya
-
-**Returns:** `true` jika berhasil
 
 ---
 
 ## Fungsi WiFi Multi (Multi SSID)
-
-### 21. WiFi.begin() dengan Multi SSID
 
 **Deskripsi:** ESP32 dapat menyimpan hingga 5 SSID berbeda dan akan terhubung ke yang terkuat.
 
@@ -487,7 +751,6 @@ WiFiMulti wifiMulti;
 void setup() {
   wifiMulti.addAP("SSID_1", "password1");
   wifiMulti.addAP("SSID_2", "password2");
-  wifiMulti.addAP("SSID_3", "password3");
   
   while(wifiMulti.run() != WL_CONNECTED) {
     delay(500);
@@ -497,114 +760,110 @@ void setup() {
 
 ---
 
-## Contoh Program Lengkap
+## Contoh Program Lengkap dengan Tiga Library
 
-### Contoh 1: Station Mode dengan Event Handler
+Berikut adalah contoh program yang menggabungkan **DMD32** (untuk P10), **EEPROM** (untuk menyimpan teks), dan **WiFi** (untuk update teks via AP):
+
 ```cpp
 #include <WiFi.h>
+#include <EEPROM.h>
+#include <DMD32.h>
+#include "fonts/SystemFont5x7.h"
+#include "fonts/Arial_Black_16_ISO_8859_1.h"
 
-const char* ssid = "YourNetwork";
-const char* password = "YourPassword";
+// ========== KONFIGURASI DMD32 ==========
+#define DISPLAYS_ACROSS 1
+#define DISPLAYS_DOWN 1
+DMD dmd(DISPLAYS_ACROSS, DISPLAYS_DOWN);
 
-void onConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-  Serial.println("Connected to AP!");
+hw_timer_t * timer = NULL;
+
+void IRAM_ATTR triggerScan() {
+  dmd.scanDisplayBySPI();
 }
 
-void onGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
-  Serial.println("Got IP: " + WiFi.localIP().toString());
-}
-
-void onDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-  Serial.println("Disconnected from AP");
-  WiFi.reconnect();
-}
-
-void setup() {
-  Serial.begin(115200);
-  
-  WiFi.onEvent(onConnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
-  WiFi.onEvent(onGotIP, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_GOT_IP);
-  WiFi.onEvent(onDisconnected, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-  
-  WiFi.begin(ssid, password);
-}
-
-void loop() {
-  delay(1000);
-}
-```
-
-### Contoh 2: Scan Jaringan WiFi
-```cpp
-#include <WiFi.h>
-
-void setup() {
-  Serial.begin(115200);
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect();
-  delay(100);
-  
-  Serial.println("Scanning WiFi...");
-  int n = WiFi.scanNetworks();
-  
-  if (n == 0) {
-    Serial.println("No networks found");
-  } else {
-    Serial.print(n);
-    Serial.println(" networks found");
-    for (int i = 0; i < n; i++) {
-      Serial.print(i + 1);
-      Serial.print(": ");
-      Serial.print(WiFi.SSID(i));
-      Serial.print(" (");
-      Serial.print(WiFi.RSSI(i));
-      Serial.print(" dBm) ");
-      Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN) ? " " : "*");
-    }
-  }
-  WiFi.scanDelete();
-}
-
-void loop() {
-  delay(10000);
-}
-```
-
-### Contoh 3: AP + STA Mode Bersamaan
-```cpp
-#include <WiFi.h>
-
-const char* sta_ssid = "RouterNetwork";
-const char* sta_password = "RouterPassword";
-const char* ap_ssid = "ESP32_AP";
+// ========== KONFIGURASI WiFi AP ==========
+const char* ap_ssid = "P10_RunningText";
 const char* ap_password = "12345678";
 
+// ========== KONFIGURASI EEPROM ==========
+#define EEPROM_SIZE 512
+#define TEXT_ADDRESS 0
+#define TEXT_MAX_LEN 256
+
+char savedText[TEXT_MAX_LEN] = "SMKN 2 MANOKWARI";
+
+// ========== WEBSERVER SEDERHANA ==========
+WiFiServer server(80);
+
 void setup() {
   Serial.begin(115200);
   
-  // Mode AP + STA
-  WiFi.mode(WIFI_AP_STA);
+  // Inisialisasi EEPROM
+  EEPROM.begin(EEPROM_SIZE);
+  EEPROM.get(TEXT_ADDRESS, savedText);
   
-  // Konfigurasi sebagai Access Point
+  // Inisialisasi DMD32 Timer
+  uint8_t cpuClock = ESP.getCpuFreqMHz();
+  timer = timerBegin(0, cpuClock, true);
+  timerAttachInterrupt(timer, &triggerScan, true);
+  timerAlarmWrite(timer, 300, true);
+  timerAlarmEnable(timer);
+  
+  dmd.clearScreen(true);
+  dmd.selectFont(Arial_Black_16_ISO_8859_1);
+  
+  // Inisialisasi WiFi Access Point
   WiFi.softAP(ap_ssid, ap_password);
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
   
-  // Konfigurasi sebagai Station
-  WiFi.begin(sta_ssid, sta_password);
-  
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  
-  Serial.println("\nStation connected!");
-  Serial.print("Station IP: ");
-  Serial.println(WiFi.localIP());
+  server.begin();
 }
 
 void loop() {
-  delay(1000);
+  // Tampilkan running text
+  dmd.clearScreen(true);
+  dmd.drawMarquee(savedText, strlen(savedText), (32 * DISPLAYS_ACROSS) - 1, 0);
+  
+  static long lastMarquee = 0;
+  if (millis() - lastMarquee >= 30) {
+    dmd.stepMarquee(-1, 0);
+    lastMarquee = millis();
+  }
+  
+  // Handle web server untuk update teks
+  WiFiClient client = server.available();
+  if (client) {
+    String request = client.readStringUntil('\r');
+    client.flush();
+    
+    if (request.indexOf("POST /update") >= 0) {
+      // Parse teks baru dari request
+      int startIdx = request.indexOf("text=") + 5;
+      int endIdx = request.indexOf(" ", startIdx);
+      String newText = request.substring(startIdx, endIdx);
+      newText.replace("+", " ");
+      newText.toCharArray(savedText, TEXT_MAX_LEN);
+      
+      // Simpan ke EEPROM
+      EEPROM.put(TEXT_ADDRESS, savedText);
+      EEPROM.commit();
+    }
+    
+    // Kirim response HTML
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-Type: text/html");
+    client.println();
+    client.println("<html><body>");
+    client.println("<h2>Update Running Text</h2>");
+    client.println("<form method='POST' action='/update'>");
+    client.println("Teks: <input type='text' name='text'><br>");
+    client.println("<input type='submit' value='Update'>");
+    client.println("</form>");
+    client.println("</body></html>");
+    client.stop();
+  }
 }
 ```
 
@@ -612,22 +871,30 @@ void loop() {
 
 ## Catatan Penting
 
-1. **Library untuk ESP32 adalah `#include <WiFi.h>`**, berbeda dengan ESP8266 yang menggunakan `#include <ESP8266WiFi.h>` 
+### Panel P10 & DMD32:
+1. **Kompatibilitas ESP32** – Library DMD32 hanya kompatibel dengan ESP32 versi 2.0.1 - 2.0.4. Jangan gunakan versi yang lebih baru .
+2. **Timer Wajib** – ESP32 membutuhkan hardware timer untuk scanning display, berbeda dengan Arduino yang menggunakan TimerOne .
+3. **Power Supply** – Panel P10 membutuhkan daya besar. Gunakan power supply eksternal 5V, jangan dari pin ESP32 .
+4. **SPI Conflict** – Pastikan tidak ada perangkat SPI lain yang menggunakan pin yang sama .
 
-2. **Mode default** ESP32 adalah Station (client), bukan Access Point 
+### EEPROM:
+1. **Jangan lupa commit()** – Data tidak akan tersimpan permanen tanpa `EEPROM.commit()`
+2. **Batasan ukuran** – ESP32 default 512 byte
+3. **Wear leveling** – Hindari menulis terlalu sering dalam loop tanpa jeda
+4. **Panggil begin() di setup** – Selalu inisialisasi EEPROM sebelum digunakan
 
-3. **Penggunaan bersama Bluetooth** dapat mempengaruhi performa WiFi karena keduanya berbagi antena
-
-4. **Power saving** dapat diaktifkan dengan `WiFi.setSleep(true)` untuk menghemat daya 
-
-5. **Koneksi otomatis** ke AP yang dikenal adalah fitur bawaan ESP32, disimpan di memori NVS
-
-6. **Pin yang digunakan** untuk komunikasi internal WiFi tidak perlu diatur manual, semua sudah ditangani library
+### WiFi:
+1. **Library untuk ESP32 adalah `#include <WiFi.h>`** – Berbeda dengan ESP8266
+2. **Mode default** ESP32 adalah Station (client), bukan Access Point
+3. **Penggunaan bersama Bluetooth** dapat mempengaruhi performa WiFi
+4. **Pin yang digunakan** untuk komunikasi internal WiFi tidak perlu diatur manual
 
 ---
 
 ## Referensi
 
-- [ESP-IDF WiFi Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_wifi.html) 
+- [Dokumentasi DMD32](https://github.com/Qudor-Engineer/DMD32) 
+- [Dokumentasi EEPROM Arduino](https://docs.arduino.cc/learn/programming/eeprom-guide)
+- [ESP32 EEPROM Library (GitHub)](https://github.com/espressif/arduino-esp32/tree/master/libraries/EEPROM)
+- [ESP-IDF WiFi Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_wifi.html)
 - [Arduino-ESP32 WiFi Library](https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFi)
-- [WiFi Examples untuk ESP32](https://tigoe.github.io/Wifi_Examples/) 
